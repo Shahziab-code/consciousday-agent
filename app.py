@@ -10,15 +10,14 @@ if st.secrets:  # Running on Streamlit Cloud
     GOOGLE_CLIENT_ID = st.secrets["GOOGLE_CLIENT_ID"]
     GOOGLE_CLIENT_SECRET = st.secrets["GOOGLE_CLIENT_SECRET"]
     OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY")
+    REDIRECT_URI = "https://consciousday-agent-by-shahzeb.streamlit.app"
 else:  # Running locally
     from dotenv import load_dotenv
     load_dotenv()
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-# Update redirect URI for production if needed
-REDIRECT_URI = os.getenv("REDIRECT_URI", "https://consciousday-agent-by-shahzeb.streamlit.app/")
+    REDIRECT_URI = "http://localhost:8501"
 
 # Initialize DB
 init_db()
@@ -110,4 +109,4 @@ if "user" in st.session_state:
             st.markdown(f"**Strategy:** {e[7]}")
 
 else:
-    st.warning("🔐 Please login with Google to use ConsciousDay Agent.") 
+    st.warning("🔐 Please login with Google to use ConsciousDay Agent.")
