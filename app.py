@@ -60,8 +60,9 @@ if "user" not in st.session_state:
 
         user_info = oauth.get("https://www.googleapis.com/oauth2/v2/userinfo").json()
 
-        # Save user in session and refresh app
+        # ✅ Save user in session and clear ?code= from URL so it doesn't retry on refresh
         st.session_state["user"] = user_info
+        st.experimental_set_query_params()  # Clear query params from URL
         st.rerun()
 
 # ---------------------- MAIN APP ----------------------
