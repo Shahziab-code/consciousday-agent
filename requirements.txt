@@ -1,6 +1,5 @@
 streamlit
+python-dotenv
 authlib
 langchain
-openai
-sqlite-utils
-python-dotenv
+langchain-openai
