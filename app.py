@@ -1,31 +1,36 @@
 import streamlit as st
 import os
-from dotenv import load_dotenv
+from urllib.parse import urlparse, parse_qs
 from authlib.integrations.requests_client import OAuth2Session
 from db.database import init_db, save_entry, get_entries
 from agent.agent import get_agent_response
-from urllib.parse import urlparse, parse_qs
 
-# Load environment variables
-load_dotenv()
+# ---------------------- ENV/SECRETS ----------------------
+if st.secrets:  # Running on Streamlit Cloud
+    GOOGLE_CLIENT_ID = st.secrets["GOOGLE_CLIENT_ID"]
+    GOOGLE_CLIENT_SECRET = st.secrets["GOOGLE_CLIENT_SECRET"]
+    OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY")
+else:  # Running locally
+    from dotenv import load_dotenv
+    load_dotenv()
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-# Google OAuth Credentials
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-
-REDIRECT_URI = "http://localhost:8501"   # Change to your deployed URL if hosted
+# Update redirect URI for production if needed
+REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8501")
 
 # Initialize DB
 init_db()
 
 st.set_page_config(page_title="ConsciousDay Agent", page_icon="🌅")
 
-# ---- GOOGLE OAUTH LOGIN ----
+# ---------------------- GOOGLE OAUTH ----------------------
 if "user" not in st.session_state:
     params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
 
     if "code" not in params:
-        # Step 1: Show Login Button
+        # Step 1: Show login button
         oauth = OAuth2Session(
             GOOGLE_CLIENT_ID,
             GOOGLE_CLIENT_SECRET,
@@ -40,7 +45,7 @@ if "user" not in st.session_state:
         st.stop()
 
     else:
-        # Step 2: Exchange code for token and user info
+        # Step 2: Handle redirect with code → fetch token & user info
         code = params.get("code")[0] if isinstance(params.get("code"), list) else params.get("code")
 
         oauth = OAuth2Session(
@@ -50,28 +55,28 @@ if "user" not in st.session_state:
             redirect_uri=REDIRECT_URI
         )
         token = oauth.fetch_token(
-        "https://oauth2.googleapis.com/token",
-        code=code
+            "https://oauth2.googleapis.com/token",
+            code=code
         )
+
         user_info = oauth.get("https://www.googleapis.com/oauth2/v2/userinfo").json()
 
-        # ✅ Save user in session and clear URL params
+        # Save user in session and refresh app
         st.session_state["user"] = user_info
-        st.rerun()  # Force reload with user saved
+        st.rerun()
 
-
-# ---- MAIN APP ----
+# ---------------------- MAIN APP ----------------------
 if "user" in st.session_state:
     user = st.session_state["user"]
 
-    # Sidebar: user info
+    # Sidebar
     st.sidebar.image(user.get("picture"), width=50)
     st.sidebar.write(f"**Welcome, {user['name']}!**")
     st.sidebar.write(user["email"])
 
     st.title("🌅 ConsciousDay Agent")
 
-    # ---- JOURNAL FORM ----
+    # ---------------------- JOURNAL FORM ----------------------
     with st.form("journal_form"):
         journal = st.text_area("🌞 Morning Journal", height=150)
         dream = st.text_area("💭 Dream (if any)", height=100)
@@ -80,19 +85,18 @@ if "user" in st.session_state:
 
         submitted = st.form_submit_button("✨ Generate My Reflection")
 
-    # Process form
     if submitted:
         with st.spinner("Processing your inputs..."):
             response = get_agent_response(journal, intention, dream, priorities)
 
-            # Save entry in DB
+            # Save entry to SQLite
             save_entry(journal, intention, dream, priorities, response, response)
 
             st.success("✨ Reflection and Day Strategy Generated!")
             st.markdown("### 📝 Reflection & Strategy")
             st.write(response)
 
-    # ---- PAST ENTRIES ----
+    # ---------------------- PAST ENTRIES ----------------------
     st.markdown("---")
     st.markdown("### 📅 View Past Entries")
     entries = get_entries()
@@ -106,5 +110,4 @@ if "user" in st.session_state:
             st.markdown(f"**Strategy:** {e[7]}")
 
 else:
-    # If no user logged in → show message
     st.warning("🔐 Please login with Google to use ConsciousDay Agent.")

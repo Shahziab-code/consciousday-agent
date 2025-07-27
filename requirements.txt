@@ -1,6 +1,6 @@
-streamlit>=1.37.0
-langchain>=0.2.5
-langchain-openai>=0.1.8
-openai>=1.34.0
-streamlit-authenticator>=0.3.2
-pyyaml
+streamlit
+authlib
+langchain
+openai
+sqlite-utils
+python-dotenv
