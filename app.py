@@ -26,7 +26,7 @@ st.set_page_config(page_title="ConsciousDay Agent", page_icon="🌅")
 
 # ---------------------- GOOGLE OAUTH ----------------------
 if "user" not in st.session_state:
-    params = st.query_params  # Use new API only
+    params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
 
     if "code" not in params:
         # Step 1: Show login button
@@ -39,36 +39,40 @@ if "user" not in st.session_state:
         auth_url, _ = oauth.create_authorization_url(
             "https://accounts.google.com/o/oauth2/auth"
         )
+
         st.title("🌅 ConsciousDay Agent")
-        st.markdown(f"[🔐 Login with Google]({auth_url})")
+        # 🔹 Show a button instead of a markdown link
+        if st.button("🔐 Login with Google"):
+            # Clear query params first and redirect in the same tab
+            st.experimental_set_query_params()
+            st.markdown(
+                f"<meta http-equiv='refresh' content='0; url={auth_url}'>",
+                unsafe_allow_html=True
+            )
+            st.stop()
         st.stop()
 
     else:
         # Step 2: Handle redirect with code → fetch token & user info
         code = params.get("code")[0] if isinstance(params.get("code"), list) else params.get("code")
 
-        try:
-            oauth = OAuth2Session(
-                GOOGLE_CLIENT_ID,
-                GOOGLE_CLIENT_SECRET,
-                scope="openid email profile",
-                redirect_uri=REDIRECT_URI
-            )
-            token = oauth.fetch_token(
-                "https://oauth2.googleapis.com/token",
-                code=code
-            )
+        oauth = OAuth2Session(
+            GOOGLE_CLIENT_ID,
+            GOOGLE_CLIENT_SECRET,
+            scope="openid email profile",
+            redirect_uri=REDIRECT_URI
+        )
+        token = oauth.fetch_token(
+            "https://oauth2.googleapis.com/token",
+            code=code
+        )
 
-            user_info = oauth.get("https://www.googleapis.com/oauth2/v2/userinfo").json()
+        user_info = oauth.get("https://www.googleapis.com/oauth2/v2/userinfo").json()
 
-            # ✅ Save user and clear params using new API
-            st.session_state["user"] = user_info
-            st.query_params.clear()  # clear ?code= from URL
-            st.rerun()
-
-        except Exception as e:
-            st.error("⚠️ Login failed. Please try again.")
-            st.stop()
+        # Save user in session and clear URL params
+        st.session_state["user"] = user_info
+        st.query_params.clear()
+        st.rerun()
 
 # ---------------------- MAIN APP ----------------------
 if "user" in st.session_state:
