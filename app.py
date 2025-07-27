@@ -18,7 +18,7 @@ else:  # Running locally
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Update redirect URI for production if needed
-REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8501")
+REDIRECT_URI = os.getenv("REDIRECT_URI", "https://consciousday-agent-by-shahzeb.streamlit.app/")
 
 # Initialize DB
 init_db()
