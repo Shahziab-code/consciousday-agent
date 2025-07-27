@@ -26,7 +26,7 @@ st.set_page_config(page_title="ConsciousDay Agent", page_icon="🌅")
 
 # ---------------------- GOOGLE OAUTH ----------------------
 if "user" not in st.session_state:
-    params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
+    params = st.query_params  # Use new API directly
 
     if "code" not in params:
         # Step 1: Show login button
@@ -43,8 +43,7 @@ if "user" not in st.session_state:
         st.title("🌅 ConsciousDay Agent")
         # 🔹 Show a button instead of a markdown link
         if st.button("🔐 Login with Google"):
-            # Clear query params first and redirect in the same tab
-            st.experimental_set_query_params()
+            # Redirect in the same tab
             st.markdown(
                 f"<meta http-equiv='refresh' content='0; url={auth_url}'>",
                 unsafe_allow_html=True
@@ -71,7 +70,7 @@ if "user" not in st.session_state:
 
         # Save user in session and clear URL params
         st.session_state["user"] = user_info
-        st.query_params.clear()
+        st.query_params.clear()   # ✅ No experimental function, clears params safely
         st.rerun()
 
 # ---------------------- MAIN APP ----------------------
