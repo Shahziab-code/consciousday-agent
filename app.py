@@ -110,4 +110,4 @@ if "user" in st.session_state:
             st.markdown(f"**Strategy:** {e[7]}")
 
 else:
-    st.warning("🔐 Please login with Google to use ConsciousDay Agent.")
+    st.warning("🔐 Please login with Google to use ConsciousDay Agent.") 
